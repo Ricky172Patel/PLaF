@@ -1,3 +1,8 @@
+(* 
+  Quiz 3 - 8 Oct 2024
+  Name: Ricky Patel
+*)
+
 open Ds
 open Parser_plaf.Ast
 open Parser_plaf.Parser
@@ -25,6 +30,10 @@ let rec eval_expr : expr -> int result =
     if m=0
     then error "Division by zero"
     else return (n/m)
+  | Min(e1,e2) ->
+    eval_expr e1 >>= fun n ->
+    eval_expr e2 >>= fun m ->
+    return (min n m)
   | _ -> failwith "Not implemented yet!"
 
 (** [eval_prog e] evaluates program [e] *)
