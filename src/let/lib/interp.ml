@@ -1,3 +1,10 @@
+(* 
+  Name: Ricky Patel
+  CWID: 20032062
+  RPATEL29
+  CS510A
+*)
+
 open Parser_plaf.Ast
 open Parser_plaf.Parser
 open Ds
@@ -54,6 +61,56 @@ let rec eval_expr : expr -> exp_val ea_result =
     string_of_env >>= fun str ->
     print_endline str; 
     error "Debug called"
+  | IsEmpty(e) -> 
+    eval_expr e >>= (function
+      | TreeVal Empty -> return (BoolVal true)
+      | TreeVal _ -> return (BoolVal false)
+      | _ -> error "Expected a tree value")
+  | EmptyTree(_t) -> 
+    return (TreeVal Empty)
+  | Node(e1,e2,e3) -> 
+    eval_expr e1 >>= fun v1 ->
+      eval_expr e2 >>= fun v2 ->
+      eval_expr e3 >>= fun v3 ->
+      (match (v2, v3) with
+       | (TreeVal t2, TreeVal t3) -> return (TreeVal (Node (v1, t2, t3)))
+       | _ -> error "TreeVal expected for both arguments")
+  | CaseT(e1,e2,id1,id2,id3,e3) -> 
+    eval_expr e1 >>= (function
+    | TreeVal Empty -> eval_expr e2
+    | TreeVal (Node (v, t1, t2)) -> 
+      extend_env id1 v >>+
+      extend_env id2 (TreeVal t1) >>+
+      extend_env id3 (TreeVal t2) >>+
+      eval_expr e3
+    | _ -> error "Expected a TreeVal")
+  | Record(fs) -> let rec eval_fields fields acc seen_names =
+    match fields with
+    | [] -> return (Record (List.rev acc))
+    | (name, (_, expr)) :: rest ->
+        if List.mem name seen_names then
+          error "Record: duplicate fields"
+        else
+          eval_expr expr >>= fun value ->
+          eval_fields rest ((name, (false, value)) :: acc) (name :: seen_names)
+    in 
+    eval_fields fs [] []
+  | Proj(e,id) -> eval_expr e >>= (function
+    | Record fields ->
+      let rec find_field id = function
+        | [] -> error "Proj: field does not exist"
+        | (name, (_, value)) :: _ when name = id -> return value
+        | _ :: rest -> find_field id rest 
+      in
+      find_field id fields
+    | _ -> error "Expected a record")
+  and
+  eval_exprs : expr list -> (exp_val list) ea_result =
+    fun es ->
+      match es with
+      | [] -> return []
+      | h::t -> eval_expr h >>= fun i ->
+        eval_exprs t >>= fun l -> return (i::l)
   | _ -> failwith "Not implemented yet!"
 
 (** [eval_prog e] evaluates program [e] *)
