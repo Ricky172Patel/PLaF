@@ -1,3 +1,10 @@
+(* 
+  Name: Ricky Patel
+  CWID: 20032062
+  RPATEL29
+  CS510A
+*)
+
 open Parser_plaf.Ast
 open Parser_plaf.Parser
 open Ds
@@ -77,6 +84,27 @@ and
   | Letrec([(id,par,_,_,e1)],e2) ->
     extend_env_rec id par e1 >>+
     eval_expr e2 
+  | EmptySet(_) ->
+    return (SetVal [])
+  | InsertSet(e1,e2) ->
+    eval_expr e1 >>= fun ev1 ->
+    eval_expr e2 >>= list_of_setVal >>= fun ev2 ->
+    return (SetVal (if List.mem ev1 ev2 then ev2 else ev1 :: ev2))
+  | UnionSet(e1,e2) ->
+    eval_expr e1 >>= list_of_setVal >>= fun set1 ->
+    eval_expr e2 >>= list_of_setVal >>= fun set2 ->
+    return (SetVal (List.fold_left (fun acc el -> if List.mem el acc then acc else el :: acc) set1 set2))
+  | SetExt(es) -> 
+    mapM eval_expr es >>= fun elements ->
+    return (SetVal elements)
+  | IsMember(e1,e2) ->
+    eval_expr e1 >>= fun element ->
+    eval_expr e2 >>= list_of_setVal >>= fun set1 ->
+    return (BoolVal (List.mem element set1))
+  | IsSubset(e1,e2) ->
+    eval_expr e1 >>= list_of_setVal >>= fun set1 ->
+    eval_expr e2 >>= list_of_setVal >>= fun set2 ->
+    return (BoolVal (List.for_all (fun el -> List.mem el set2) set1))
   | Debug(_e) ->
     string_of_env >>= fun str ->
     print_endline str; 

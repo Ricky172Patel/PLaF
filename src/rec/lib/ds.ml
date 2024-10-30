@@ -1,3 +1,9 @@
+(* 
+  Name: Ricky Patel
+  CWID: 20032062
+  RPATEL29
+  CS510A
+*)
 
 (* This file defines expressed values and environments *)
 open Parser_plaf.Ast
@@ -11,6 +17,7 @@ type exp_val =
   | UnitVal
   | PairVal of exp_val*exp_val
   | ProcVal of string*expr*env
+  | SetVal of exp_val list
 and
   env =
   | EmptyEnv
@@ -104,6 +111,10 @@ let clos_of_procVal : exp_val -> (string*expr*env) ea_result =
   match ev with
   | ProcVal(id,body,en) -> return (id,body,en)
   | _ -> error "Expected a closure!"
+
+let list_of_setVal : exp_val -> ( exp_val list ) ea_result = function
+  | SetVal l -> return l
+  | _ -> error " Expected a set ! "
 
 let rec string_of_expval = function
   |  NumVal n -> "NumVal " ^ string_of_int n
