@@ -1,0 +1,16 @@
+let n_left = { data <= 12; left <= 0; right <= 0}    (* 0 in head signals null *)
+in let n_right = { data <= 44; left <= 0; right <= 0}
+in let n_root = { data <= 33; left <= n_left ; right <= n_right }
+in let t1 = { root <= n_root ; length <= 3}
+in let bt_max = proc (t) { proc () { 
+    letrec find_max_helper (nd) = 
+      if number?(nd) then return (NumVal 0)
+      else 
+        let left_max = find_max_helper nd.left in
+        let right_max = find_max_helper nd.right in
+        left_max >>= fun left_val ->
+        right_max >>= fun right_val ->
+        return (NumVal (max (max left_val right_val) nd.data))
+    in find_max_helper t.root
+  }}
+in (bt_max t1)

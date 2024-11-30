@@ -1,0 +1,33 @@
+let n_left = { data <= 12; left <= 0; right <= 0}    (* 0 in head signals null *)
+in let n_right = { data <= 44; left <= 0; right <= 0}
+in let n_root = { data <= 33; left <= n_left ; right <= n_right }
+in let t1 = { root <= n_root ; length <= 3}
+in let add_bt = proc (t) { proc (v) {
+    letrec add_bt_helper (nd) =
+        if number?(nd) then return 0
+        else if (v << nd.data) then
+            if number?(nd.left) then
+                let new_left = Store.new_ref g_store {data <= v; left <= 0; right <= 0} in
+                nd.left <= new_left
+            else
+                add_bt_helper nd.left
+        else
+            if number?(nd.right) then
+                let new_right = Store.new_ref g_store {data <= v; left <= 0; right <= 0} in
+                nd.right <= new_right
+            else
+                add_bt_helper nd.right
+    in 
+    if (t.length = 0) then
+        let new_root = Store.new_ref g_store {data <= v; left <= 0; right <= 0} in
+        t.root <= new_root
+    else 
+        add_bt_helper (Store.deref g_store t.root);
+    t.length <= t.length + 1;
+    return UnitVal
+}}
+in 
+begin
+     (add_bt t1) 23;
+     debug(t1)
+end
