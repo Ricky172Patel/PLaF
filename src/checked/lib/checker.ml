@@ -52,6 +52,89 @@ let rec chk_expr : expr -> texpr tea_result = function
      else error
          "LetRec: Type of recursive function does not match
 declaration")
+  | NewRef(e) ->
+    chk_expr e >>= fun t ->
+    return (RefType t)
+  | DeRef(e) ->
+    chk_expr e >>= fun t ->
+      (match t with
+        | RefType v -> return v
+        | _ -> error "DeRef: argument is not a reference")
+  | SetRef(e1,e2) ->
+    chk_expr e1 >>= fun t1 ->
+    chk_expr e2 >>= fun t2 ->
+      (match t1,t2 with
+      | RefType v, _ -> 
+        if v=t2
+          then return UnitType
+        else error "SetRef: Expected a reference type or type of value does not match"
+      | _, _ -> error "SetRef: Expected a reference type")
+  | BeginEnd([]) ->
+    return UnitType
+  | BeginEnd(es) ->
+    List.fold_left (fun v e -> v >>= fun _ -> chk_expr e) (return UnitType) es
+  | EmptyList(t) ->
+    (match t with
+    | Some t1 -> return (ListType t1)
+    | None -> error "EmptyList: type of list is missing")
+  | Cons(e1,e2) ->
+    chk_expr e1 >>= fun t1 ->
+    chk_expr e2 >>= fun t2 ->
+      (match t2 with
+      | ListType t3 -> 
+        if (t1=t3)
+          then return (ListType t1)
+        else error "cons: type of head and tail do not match"
+      | _ -> error "cons: type of tail is not a list")
+  | IsEmpty(e) -> 
+    chk_expr e >>= fun t ->
+      (match t with
+      | ListType _ -> return BoolType
+      | TreeType _ -> return BoolType
+      | _ -> error "isEmpty: argument is not a list")
+  | Hd(e) ->
+    chk_expr e >>= fun t ->
+      (match t with
+      | ListType t1 -> return t1
+      | _ -> error "hd: argument is not a list")
+  | Tl(e) ->
+    chk_expr e >>= fun t ->
+      (match t with
+      | ListType _ -> return t
+      | _ -> error "tl: argument is not a list")
+  | EmptyTree(t) ->
+    (match t with
+    | Some t1 -> return (TreeType t1)
+    | None -> error "EmptyTree: type of tree is missing")
+  | Node(de, le, re) ->
+    chk_expr de >>= fun t1 ->
+    chk_expr le >>= fun t2 ->
+    chk_expr re >>= fun t3 ->
+      (match t2,t3 with
+        | TreeType t4, TreeType t5 -> 
+          if (t1=t4 && t1=t5)
+            then return (TreeType t1)
+          else if (t1=t4 && t1!=t5)
+            then error "node: type of de and right subtree do not match"
+          else if (t1!=t4 && t1=t5)
+            then error "node: type of de and left subtree do not match"
+          else error "node: types of left and right subtree do not match de"
+        | TreeType _, _ -> error "node: Expected a tree type for re"
+        | _, TreeType _ -> error "node: Expected a tree type for le"
+        | _, _ -> error "node: Expected tree type for both le and re")
+  | CaseT(target,emptycase,id1,id2,id3,nodecase) ->
+    chk_expr target >>= fun tgt ->
+    (match tgt with
+    | TreeType t ->
+      chk_expr emptycase >>= fun s1 ->
+      (extend_tenv id1 t >>+
+      extend_tenv id2 tgt >>+
+      extend_tenv id3 tgt >>+
+      chk_expr nodecase) >>= fun s2 ->
+        if s1=s2
+          then return s1
+        else error "CaseT: types of emptycase and nodecase do not match"
+    | _ -> error "CaseT: target Expected is not a tree type")
   | Debug(_e) ->
     string_of_tenv >>= fun str ->
     print_endline str;
