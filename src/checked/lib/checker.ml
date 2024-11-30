@@ -1,3 +1,10 @@
+(* 
+  Name: Ricky Patel
+  CWID: 20032062
+  RPATEL29
+  CS510A
+*)
+
 open ReM
 open Dst
 open Parser_plaf.Ast
