@@ -142,6 +142,34 @@ declaration")
           then return s1
         else error "CaseT: types of emptycase and nodecase do not match"
     | _ -> error "CaseT: target Expected is not a tree type")
+  | EmptyQueue(t) ->
+    (match t with
+    | Some t1 -> return (QueueType t1)
+    | None -> error "EmptyQueue: type of queue is missing")
+  | AddQueue(e1,e2) -> 
+    chk_expr e1 >>= fun t1 ->
+    chk_expr e2 >>= fun t2 ->
+        (match t2 with
+        | QueueType t3 ->
+            if t3 = t1 then 
+              return (QueueType t1)
+            else error "AddQueue: type of element does not match queue type"
+        | _ -> error "AddQueue: second argument is not a queuetype")
+  | RemoveQueue(e1) -> 
+    chk_expr e1 >>= fun t1 ->
+      (match t1 with
+      | QueueType t2 -> return (QueueType t2)
+      | _ -> error "RemoveQueue: first argument is not a queuetype")
+  | TopQueue(es) -> 
+    chk_expr es >>= fun t1 ->
+      (match t1 with
+      | QueueType t2 -> return t2
+      | _ -> error "TopQueue: first argument is not a queuetype")
+  | Size(e1) -> 
+    chk_expr e1 >>= fun t1 ->
+      (match t1 with
+      | QueueType _ -> return IntType
+      | _ -> error "Size: first argument is not a queuetype")
   | Debug(_e) ->
     string_of_tenv >>= fun str ->
     print_endline str;
